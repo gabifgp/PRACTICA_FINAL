@@ -1,4 +1,4 @@
-
+HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -17,7 +17,6 @@ target/
 .idea
 *.iws
 *.iml
-**/target/
 *.ipr
 
 ### NetBeans ###
@@ -32,6 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Maven ###
-*.log

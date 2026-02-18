@@ -7,13 +7,20 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import lombok.Getter;
+import lombok.Setter;
 
+<<<<<<< HEAD
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 
+=======
+@Getter
+@Setter
+>>>>>>> sofia
 @Entity
 @Table(name = "reservas")
 public class ModeloReserva {

@@ -1,4 +1,4 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

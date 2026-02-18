@@ -1,8 +1,9 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
 
 
-import jakarta.validation.Valid;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.servicios.ServicioReserva;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

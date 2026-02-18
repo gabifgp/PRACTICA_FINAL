@@ -1,5 +1,9 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloRol;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloUsuario;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioUsuario;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.dto.LoginRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;

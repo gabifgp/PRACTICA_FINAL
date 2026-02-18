@@ -1,4 +1,4 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository;
 
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloPista;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;

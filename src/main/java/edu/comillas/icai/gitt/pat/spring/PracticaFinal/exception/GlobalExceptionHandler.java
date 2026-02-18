@@ -1,6 +1,5 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.exception;
 
-import edu.comillas.icai.gitt.pat.spring.PracticaFinal.exception.NotFoundException;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 

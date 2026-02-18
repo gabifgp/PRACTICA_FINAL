@@ -1,5 +1,8 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.*;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioPista;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioUsuario;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;

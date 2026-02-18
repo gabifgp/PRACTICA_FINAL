@@ -1,7 +1,12 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.servicios;
 
 
 
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloDisponibilidad;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloPista;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioPista;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioReserva;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;

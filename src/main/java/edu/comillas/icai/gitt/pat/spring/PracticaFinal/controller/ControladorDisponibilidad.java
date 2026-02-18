@@ -1,4 +1,6 @@
-package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloDisponibilidad;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.servicios.ServicioDisponibilidad;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 

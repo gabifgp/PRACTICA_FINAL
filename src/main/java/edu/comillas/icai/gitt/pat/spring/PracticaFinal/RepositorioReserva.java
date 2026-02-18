@@ -57,7 +57,9 @@ public interface RepositorioReserva extends JpaRepository<ModeloReserva, Long> {
     List<ModeloReserva> findByUsuarioAndFechaReservaBetweenOrderByFechaReservaAscHoraInicioAsc(
             ModeloUsuario usuario, LocalDate from, LocalDate to
     );
-
-
+  
+    List<ModeloReserva> findByUsuario(ModeloUsuario usuario);
+    List<ModeloReserva> findByPistaAndFechaReserva(ModeloPista pista, LocalDate fecha);
 
 }
+

@@ -9,6 +9,7 @@ import java.util.List;
 public interface RepositorioPista extends JpaRepository<ModeloPista, Long> {
     boolean existsById(Long id);
     List<ModeloPista> findByActivaTrue();
+    ModeloPista findByNombre(String nombre);
 
 
 }

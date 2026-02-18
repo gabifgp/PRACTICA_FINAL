@@ -8,6 +8,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+
 @Entity
 @Table(name = "reservas")
 public class ModeloReserva {
@@ -61,9 +67,14 @@ public class ModeloReserva {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
+    public ModeloReserva(ModeloUsuario usuario) {
+        this.usuario = usuario;
+    }
+
     public ModeloReserva() {
 
     }
+
 
     public @NotNull <U> LocalTime getHoraInicio() {
         return horaInicio;
@@ -74,8 +85,8 @@ public class ModeloReserva {
     }
 
 
-    public ModeloReserva(ModeloUsuario usuario) {
-    }
+    //public ModeloReserva(ModeloUsuario usuario) {
+    //}
 
     @PrePersist
     public void prePersist() {
@@ -95,4 +106,61 @@ public class ModeloReserva {
             this.horaFin = horaInicio.plusMinutes(duracionMinutos);
         }
     }
+
+
+    public void setUsuario(ModeloUsuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public ModeloUsuario getUsuario() {
+        return usuario;
+    }
+
+    public void setPista(ModeloPista pista) {
+        this.pista = pista;
+    }
+
+    public ModeloPista getPista() {
+        return pista;
+    }
+
+    public LocalDate getFechaReserva() {
+        return fechaReserva;
+    }
+
+    public void setFechaReserva(LocalDate fechaReserva) {
+        this.fechaReserva = fechaReserva;
+    }
+
+    public void setHoraInicio(LocalTime horaInicio) {
+        this.horaInicio = horaInicio;
+        recalcularHoraFin();
+    }
+
+    public Integer getDuracionMinutos() {
+        return duracionMinutos;
+    }
+
+    public void setDuracionMinutos(Integer duracionMinutos) {
+        this.duracionMinutos = duracionMinutos;
+        recalcularHoraFin();
+    }
+
+    public Estado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(Estado estado) {
+        this.estado = estado;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+
 }

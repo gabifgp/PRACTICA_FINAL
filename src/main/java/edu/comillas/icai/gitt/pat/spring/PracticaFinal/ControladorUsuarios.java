@@ -10,14 +10,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/pistaPadel/auth")
-public class ControladorRest {
+public class ControladorUsuarios {
 
     private final RepositorioUsuario repositorioUsuario;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final String USUARIO_SESION = "USUARIO_LOGUEADO";
 
     // Inyección por constructor (como se ve en la lógica de Spring buena)
-    public ControladorRest(RepositorioUsuario repositorioUsuario) {
+    public ControladorUsuarios(RepositorioUsuario repositorioUsuario) {
         this.repositorioUsuario = repositorioUsuario;
     }
 

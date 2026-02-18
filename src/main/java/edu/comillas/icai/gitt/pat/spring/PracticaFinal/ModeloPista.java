@@ -10,6 +10,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -27,6 +29,7 @@ public class ModeloPista {
     @Column(name = "id_pista", nullable = false)
     private Long idPista;
 
+    @Getter
     @NotBlank
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;

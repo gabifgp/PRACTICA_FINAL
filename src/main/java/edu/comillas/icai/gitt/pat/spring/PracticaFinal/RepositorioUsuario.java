@@ -1,10 +1,17 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
 
-import org.springframework.data.repository.CrudRepository;
+
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloUsuario;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RepositorioUsuario extends CrudRepository<ModeloUsuario, Long> {
+public interface RepositorioUsuario extends JpaRepository<ModeloUsuario, Long> {
+    List<ModeloUsuario> findAll();
+
     ModeloUsuario findByEmail(String email);
     boolean existsByEmail(String email);
 }
+
+
+

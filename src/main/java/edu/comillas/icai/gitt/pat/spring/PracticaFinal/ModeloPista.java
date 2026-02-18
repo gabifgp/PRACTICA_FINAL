@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class ModeloPista {
     @Column(name = "id_pista", nullable = false)
     private Long idPista;
 
+    @Getter
     @NotBlank
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;

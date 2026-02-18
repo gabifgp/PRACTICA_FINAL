@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -49,8 +49,6 @@ public class ModeloPista {
     @Column(name = "fecha_alta", nullable = false)
     private LocalDateTime fechaAlta;
 
-    // 0..n reservas
-    // Cuando creeis ModeloReserva, ajustad mappedBy al nombre del atributo en Reserva.
     @OneToMany(mappedBy = "pista")
     private List<ModeloReserva> reservas;
 

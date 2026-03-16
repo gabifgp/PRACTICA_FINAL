@@ -58,18 +58,19 @@ public class ServicioReserva {
 
         LocalTime inicio = req.getHoraInicio();
         LocalTime fin = inicio.plusMinutes(req.getDuracionMinutos());
-        //409
-        boolean solapa = repositorioReserva
-                .existsByPistaAndFechaReservaAndEstadoAndHoraInicioLessThanAndHoraFinGreaterThan(
-                        pista,
-                        req.getFechaReserva(),
-                        ModeloReserva.Estado.ACTIVA,
-                        fin,     // horaInicioLessThan = fin nueva
-                        inicio   // horaFinGreaterThan = inicio nueva
-                );
+
+        // Usamos el método con @Query que es más fiable y fácil de leer
+        // Pasamos 'null' como tercer parámetro porque al CREAR no hay un ID que excluir
+        boolean solapa = repositorioReserva.existeSolapeActivo(
+                pista.getIdPista(),
+                req.getFechaReserva(),
+                null,
+                inicio,
+                fin
+        );
 
         if (solapa) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "La franja ya esta reservada");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La franja ya está reservada");
         }
 
 
@@ -80,6 +81,7 @@ public class ServicioReserva {
         reserva.setPista(pista);
         reserva.setFechaReserva(req.getFechaReserva());
         reserva.setHoraInicio(inicio);
+        reserva.setHoraFin(fin);
         reserva.setDuracionMinutos(req.getDuracionMinutos());
         reserva.setEstado(ModeloReserva.Estado.ACTIVA);
 

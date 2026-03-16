@@ -1,7 +1,7 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;
-import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.ReservaRepository;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioReserva;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -11,9 +11,9 @@ import java.util.List;
 @RequestMapping("/pistaPadel/admin")
 public class AdminReservationController {
 
-    private final ReservaRepository reservaRepository;
+    private final RepositorioReserva reservaRepository;
 
-    public AdminReservationController(ReservaRepository reservaRepository) {
+    public AdminReservationController(RepositorioReserva reservaRepository) {
         this.reservaRepository = reservaRepository;
     }
 

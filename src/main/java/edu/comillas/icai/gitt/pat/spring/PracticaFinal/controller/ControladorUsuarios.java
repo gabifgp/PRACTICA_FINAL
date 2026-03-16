@@ -35,22 +35,25 @@ public class ControladorUsuarios {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya existe");
         }
 
-        usuario.setRol(ModeloRol.USER);
+        // Si el usuario no trae rol en el JSON, le ponemos USER por defecto
+        if (usuario.getRol() == null) {
+            usuario.setRol(ModeloRol.USER);
+        }
+        // Si trae un rol, dejamos el que viene (ADMIN o USER)
+        // Spring Boot se encarga de convertir el String del JSON al Enum ModeloRol automáticamente
+
         return repositorioUsuario.save(usuario);
     }
 
     @PostMapping("/login")
     public String login(@Valid @RequestBody LoginRequest loginRequest, HttpSession session) {
-        logger.info("Intento de login para: {}", loginRequest.getEmail());
-
         ModeloUsuario usuario = repositorioUsuario.findByEmail(loginRequest.getEmail());
 
-        // Comprobamos si existe y si la contraseña coincide (aquí iría un encoder en el futuro)
         if (usuario == null || !usuario.getPassword().equals(loginRequest.getPassword())) {
-            logger.error("Credenciales incorrectas para: {}", loginRequest.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o contraseña incorrectos");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas");
         }
 
+        // Guardamos el email en la sesión
         session.setAttribute(USUARIO_SESION, usuario.getEmail());
         return "Login exitoso";
     }

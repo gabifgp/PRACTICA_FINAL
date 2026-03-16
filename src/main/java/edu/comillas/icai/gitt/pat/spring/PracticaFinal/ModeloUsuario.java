@@ -10,21 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
-<<<<<<< HEAD
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-=======
->>>>>>> sofia
 @Entity
-@Table(
-        name = "usuarios",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_usuarios_email", columnNames = "email")
-        }
-)
 public class ModeloUsuario {
 
     @Setter

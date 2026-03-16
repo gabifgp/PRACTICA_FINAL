@@ -7,30 +7,25 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import lombok.Getter;
 import lombok.Setter;
 
-<<<<<<< HEAD
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-
-=======
-@Getter
-@Setter
->>>>>>> sofia
 @Entity
 @Table(name = "reservas")
+@Getter
+@Setter
+
 public class ModeloReserva {
 
     @Id
+    @Getter
+    @Setter
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_reserva", nullable = false)
     private Long idReserva;
 
     // Exactamente 1 usuario
+    @Getter
+    @Setter
     @NotNull
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -38,6 +33,8 @@ public class ModeloReserva {
 
 
     // Exactamente 1 pista
+    @Getter
+    @Setter
     @NotNull
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_pista", nullable = false)
@@ -45,16 +42,22 @@ public class ModeloReserva {
 
 
     // Dia de la reserva
+    @Getter
+    @Setter
     @NotNull
     @Column(name = "fecha_reserva", nullable = false)
     private LocalDate fechaReserva;
 
     // Hora de inicio
+    @Getter
+    @Setter
     @NotNull
     @Column(name = "hora_inicio", nullable = false)
     private LocalTime horaInicio;
 
     // Duracion en minutos
+    @Getter
+    @Setter
     @NotNull
     @Min(1)
     @Column(name = "duracion_minutos", nullable = false)
@@ -63,14 +66,19 @@ public class ModeloReserva {
     // Hora fin (calculada)
     // La guardamos para facilitar consultas, pero se calcula automaticamente.
     @Getter
+    @Setter
     @NotNull
     @Column(name = "hora_fin", nullable = false)
     private LocalTime horaFin;
 
+    @Getter
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 15)
     private Estado estado = Estado.ACTIVA;
 
+    @Getter
+    @Setter
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
@@ -87,6 +95,7 @@ public class ModeloReserva {
         return horaInicio;
     }
 
+    @Getter
     public enum Estado {
         ACTIVA, CANCELADA
     }
@@ -114,60 +123,6 @@ public class ModeloReserva {
         }
     }
 
-
-    public void setUsuario(ModeloUsuario usuario) {
-        this.usuario = usuario;
-    }
-
-    public ModeloUsuario getUsuario() {
-        return usuario;
-    }
-
-    public void setPista(ModeloPista pista) {
-        this.pista = pista;
-    }
-
-    public ModeloPista getPista() {
-        return pista;
-    }
-
-    public LocalDate getFechaReserva() {
-        return fechaReserva;
-    }
-
-    public void setFechaReserva(LocalDate fechaReserva) {
-        this.fechaReserva = fechaReserva;
-    }
-
-    public void setHoraInicio(LocalTime horaInicio) {
-        this.horaInicio = horaInicio;
-        recalcularHoraFin();
-    }
-
-    public Integer getDuracionMinutos() {
-        return duracionMinutos;
-    }
-
-    public void setDuracionMinutos(Integer duracionMinutos) {
-        this.duracionMinutos = duracionMinutos;
-        recalcularHoraFin();
-    }
-
-    public Estado getEstado() {
-        return estado;
-    }
-
-    public void setEstado(Estado estado) {
-        this.estado = estado;
-    }
-
-    public LocalDateTime getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(LocalDateTime fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-    }
 
 
 }

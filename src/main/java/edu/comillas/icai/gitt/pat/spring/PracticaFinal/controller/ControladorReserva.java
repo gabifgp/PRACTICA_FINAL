@@ -1,9 +1,8 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
-
-
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloUsuario;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.dto.PatchReservationRequest;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioUsuario;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.servicios.ServicioReserva;
 import jakarta.servlet.http.HttpSession;
@@ -16,11 +15,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/pistaPadel")
+@RequestMapping("/pistaPadel/reservations")
 public class ControladorReserva {
-
     private final ServicioReserva servicioReserva;
-    private final RepositorioUsuario repositorioUsuario; // Añadimos esto
+    private final RepositorioUsuario repositorioUsuario;
     private static final String USUARIO_SESION = "USUARIO_LOGUEADO";
 
     public ControladorReserva(ServicioReserva servicioReserva, RepositorioUsuario repositorioUsuario) {
@@ -28,14 +26,24 @@ public class ControladorReserva {
         this.repositorioUsuario = repositorioUsuario;
     }
 
-    @PostMapping("/reservations")
+    private ModeloUsuario obtenerUsuarioDeSesion(HttpSession session) {
+        String email = (String) session.getAttribute(USUARIO_SESION);
+        if (email == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
+        if (usuario == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado");
+        return usuario;
+    }
+
+    // POST /pistaPadel/reservations
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ModeloReserva crearReserva(@RequestBody ModeloReserva req, HttpSession session) {
+    public ModeloReserva crearReserva(HttpSession session, @RequestBody ModeloReserva req) {
         ModeloUsuario usuario = obtenerUsuarioDeSesion(session);
         return servicioReserva.crearReserva(usuario.getIdUsuario(), req);
     }
 
-    @GetMapping("/reservations")
+    // GET /pistaPadel/reservations
+    @GetMapping
     public List<ModeloReserva> misReservas(
             HttpSession session,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
@@ -45,74 +53,27 @@ public class ControladorReserva {
         return servicioReserva.listarMisReservas(usuario.getIdUsuario(), from, to);
     }
 
-    @GetMapping("/reservations/{reservationId}")
-    public ModeloReserva obtenerReserva(@PathVariable Long reservationId, HttpSession session) {
+    // GET /pistaPadel/reservations/{reservationId}
+    @GetMapping("/{reservationId}")
+    public ModeloReserva obtenerReserva(HttpSession session, @PathVariable Long reservationId) {
         ModeloUsuario usuario = obtenerUsuarioDeSesion(session);
         return servicioReserva.obtenerReserva(usuario.getIdUsuario(), reservationId);
     }
 
-    // Método de apoyo para no repetir código
-    private ModeloUsuario obtenerUsuarioDeSesion(HttpSession session) {
-        String email = (String) session.getAttribute(USUARIO_SESION);
-        if (email == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Debes iniciar sesión");
-        }
-        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
-        if (usuario == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado");
-        }
-        return usuario;
+    // PATCH /pistaPadel/reservations/{reservationId}
+    @PatchMapping("/{reservationId}")
+    public ModeloReserva editarReserva(HttpSession session, @PathVariable Long reservationId, @RequestBody PatchReservationRequest body) {
+        ModeloUsuario usuario = obtenerUsuarioDeSesion(session);
+        // El servicio debe encargarse de validar que la reserva pertenece al idUsuario
+        return servicioReserva.actualizarReserva(usuario.getIdUsuario(), reservationId, body);
+    }
+
+    // DELETE /pistaPadel/reservations/{reservationId}
+    @DeleteMapping("/{reservationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelarReserva(HttpSession session, @PathVariable Long reservationId) {
+        ModeloUsuario usuario = obtenerUsuarioDeSesion(session);
+        // El servicio debe validar la propiedad antes de cancelar
+        servicioReserva.cancelarReserva(usuario.getIdUsuario(), reservationId);
     }
 }
-/*
-@RestController
-@RequestMapping("/pistaPadel")
-public class ControladorReserva {
-
-    private final ServicioReserva servicioReserva;
-
-    public ControladorReserva(ServicioReserva servicioReserva) {
-        this.servicioReserva = servicioReserva;
-    }
-
-    @PostMapping("/reservations")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ModeloReserva crearReserva(
-            @RequestHeader(name="X-User-Id", required=false) Long userId,
-            @RequestBody ModeloReserva req
-    ) {
-        if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
-        }
-        return servicioReserva.crearReserva(userId, req);
-    }
-
-    @PostMapping("/reservations/test")
-    public String testHeader(@RequestHeader(name="X-User-Id", required=false) String userId) {
-        return "HEADER=" + userId;
-    }
-
-    @GetMapping("/reservations")
-    public List<ModeloReserva> misReservas(
-            @RequestHeader(name="X-User-Id", required=false) Long userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
-    ) {
-        if (userId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
-        return servicioReserva.listarMisReservas(userId, from, to);
-    }
-
-
-    @GetMapping("/reservations/{reservationId}")
-    public ModeloReserva obtenerReserva(
-            @RequestHeader(name="X-User-Id", required=false) Long userId,
-            @PathVariable Long reservationId
-    ) {
-        if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
-        }
-        return servicioReserva.obtenerReserva(userId, reservationId);
-    }
-
-
-}*/

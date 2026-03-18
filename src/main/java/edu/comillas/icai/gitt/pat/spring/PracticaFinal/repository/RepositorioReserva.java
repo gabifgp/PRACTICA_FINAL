@@ -21,6 +21,9 @@ public interface RepositorioReserva extends JpaRepository<ModeloReserva, Long> {
     List<ModeloReserva> findByPistaAndFechaReservaAndEstadoOrderByHoraInicioAsc(
             ModeloPista pista, LocalDate fechaReserva, ModeloReserva.Estado estado);
 
+    // Para las TareasProgramadas
+    List<ModeloReserva> findByFechaReservaAndEstado(LocalDate fecha, ModeloReserva.Estado estado);
+
     // Reservas de un usuario (activas o todas)
     List<ModeloReserva> findByUsuarioAndEstadoOrderByFechaReservaAscHoraInicioAsc(
             ModeloUsuario usuario, ModeloReserva.Estado estado);

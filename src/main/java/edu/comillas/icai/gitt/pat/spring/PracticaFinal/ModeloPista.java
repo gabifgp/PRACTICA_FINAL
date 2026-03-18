@@ -1,5 +1,6 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -50,6 +51,7 @@ public class ModeloPista {
     private LocalDateTime fechaAlta;
 
     @OneToMany(mappedBy = "pista")
+    @JsonIgnore
     private List<ModeloReserva> reservas;
 
     public ModeloPista() {

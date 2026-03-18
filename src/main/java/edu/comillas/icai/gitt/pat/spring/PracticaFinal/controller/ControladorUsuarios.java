@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/pistaPadel/auth")
 public class ControladorUsuarios {
@@ -35,22 +37,25 @@ public class ControladorUsuarios {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya existe");
         }
 
-        usuario.setRol(ModeloRol.USER);
+        // Si el usuario no trae rol en el JSON, le ponemos USER por defecto
+        if (usuario.getRol() == null) {
+            usuario.setRol(ModeloRol.USER);
+        }
+        // Si trae un rol, dejamos el que viene (ADMIN o USER)
+        // Spring Boot se encarga de convertir el String del JSON al Enum ModeloRol automáticamente
+
         return repositorioUsuario.save(usuario);
     }
 
     @PostMapping("/login")
     public String login(@Valid @RequestBody LoginRequest loginRequest, HttpSession session) {
-        logger.info("Intento de login para: {}", loginRequest.getEmail());
-
         ModeloUsuario usuario = repositorioUsuario.findByEmail(loginRequest.getEmail());
 
-        // Comprobamos si existe y si la contraseña coincide (aquí iría un encoder en el futuro)
         if (usuario == null || !usuario.getPassword().equals(loginRequest.getPassword())) {
-            logger.error("Credenciales incorrectas para: {}", loginRequest.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o contraseña incorrectos");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas");
         }
 
+        // Guardamos el email en la sesión
         session.setAttribute(USUARIO_SESION, usuario.getEmail());
         return "Login exitoso";
     }
@@ -65,13 +70,44 @@ public class ControladorUsuarios {
         logger.info("Sesión cerrada correctamente");
     }
 
-    @GetMapping("/me")
-    public ModeloUsuario getMe(HttpSession session) {
+    @PatchMapping("/me")
+    public ModeloUsuario actualizarPerfil(HttpSession session, @RequestBody ModeloUsuario datosNuevos) {
+        String email = (String) session.getAttribute(USUARIO_SESION);
+        if (email == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+
+        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
+
+        // Solo actualizamos si el campo viene en el JSON
+        if (datosNuevos.getNombre() != null) usuario.setNombre(datosNuevos.getNombre());
+        if (datosNuevos.getApellidos() != null) usuario.setApellidos(datosNuevos.getApellidos());
+        if (datosNuevos.getPassword() != null) usuario.setPassword(datosNuevos.getPassword());
+
+        return repositorioUsuario.save(usuario);
+    }
+
+    // Añade esto al final de ControladorUsuarios.java
+    @GetMapping("/users")
+    public List<ModeloUsuario> listarTodosLosUsuarios(HttpSession session) {
+        validarAdmin(session); // Reutiliza la lógica de validarAdmin que tienes en otros controllers
+        return repositorioUsuario.findAll();
+    }
+
+    @DeleteMapping("/users/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void eliminarUsuario(@PathVariable Long id, HttpSession session) {
+        validarAdmin(session);
+        repositorioUsuario.deleteById(id);
+    }
+
+    // Método útil para que otros controladores verifiquen el rol
+    public void validarAdmin(HttpSession session) {
         String email = (String) session.getAttribute(USUARIO_SESION);
         if (email == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         }
-
-        return repositorioUsuario.findByEmail(email);
+        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
+        if (usuario == null || usuario.getRol() != ModeloRol.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acceso denegado: Se requiere ser Administrador");
+        }
     }
 }

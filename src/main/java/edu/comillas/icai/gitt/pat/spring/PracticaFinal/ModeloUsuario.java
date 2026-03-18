@@ -1,4 +1,5 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,21 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
-<<<<<<< HEAD
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-=======
->>>>>>> sofia
 @Entity
-@Table(
-        name = "usuarios",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_usuarios_email", columnNames = "email")
-        }
-)
 public class ModeloUsuario {
 
     @Setter
@@ -62,6 +49,7 @@ public class ModeloUsuario {
     @NotBlank
     @Size(max = 255)
     @Column(name = "password", nullable = false, length = 255)
+    @JsonIgnore
     private String password;
 
     @Setter
@@ -90,6 +78,7 @@ public class ModeloUsuario {
     // 0..n reservas
     // Cuando creeis ModeloReserva, ajustad mappedBy al nombre del atributo en Reserva.
     @OneToMany(mappedBy = "usuario")
+    @JsonIgnore
     private List<ModeloReserva> reservas;
 
 

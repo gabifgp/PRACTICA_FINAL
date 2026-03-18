@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -26,64 +27,76 @@ public class ControladorPistaPadel {
         this.repositorioUsuario = repositorioUsuario;
     }
 
-    // 1) GET /pistaPadel/courts?active=true/false
+    // Método auxiliar para validar que el usuario es ADMIN
+    private void validarAdmin(HttpSession session) {
+        String email = (String) session.getAttribute(USUARIO_SESION);
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Debes iniciar sesión");
+        }
+
+        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado");
+        }
+
+        if (usuario.getRol() != ModeloRol.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permisos de administrador");
+        }
+    }
+
+    // GET /pistaPadel/courts?active=true/false (Público)
     @GetMapping
     public List<ModeloPista> listarPistas(@RequestParam(required = false) Boolean active) {
-        if (active == null) {
-            return repositorioPista.findAll();
+        if (active != null) {
+            return repositorioPista.findByActiva(active);
         }
-        return repositorioPista.findByActiva(active);
+        return (List<ModeloPista>) repositorioPista.findAll();
     }
 
-    // 2) GET /pistaPadel/courts/{courtId}
-    @GetMapping("/{courtId}")
-    public ModeloPista obtenerPista(@PathVariable Long courtId) {
-        return repositorioPista.findById(courtId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pista no encontrada"));
+    // POST /pistaPadel/courts (Solo ADMIN)
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ModeloPista crearPista(@RequestBody ModeloPista pista, HttpSession session) {
+        validarAdmin(session); // Comprobación de seguridad
+
+        pista.setFechaAlta(LocalDateTime.now());
+        return repositorioPista.save(pista);
     }
 
-    // 3) PATCH /pistaPadel/courts/{courtId} (ADMIN)
+    // PATCH /pistaPadel/courts/{courtId} (Solo ADMIN)
     @PatchMapping("/{courtId}")
-    public ModeloPista modificarPista(
+    public ModeloPista actualizarPista(
             @PathVariable Long courtId,
             @RequestBody PistaPatchRequest body,
             HttpSession session) {
 
-        // 401: no autenticado
-        String email = (String) session.getAttribute(USUARIO_SESION);
-        if (email == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
+        validarAdmin(session); // Comprobación de seguridad
 
-        // buscar usuario (si no existe, 401)
-        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
-        if (usuario == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        // 403: no admin
-        if (usuario.getRol() != ModeloRol.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        // 404: pista no encontrada
         ModeloPista pista = repositorioPista.findById(courtId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pista no encontrada"));
 
-        // 400: body vacío
-        if (body.getPrecioHora() == null && body.getActiva() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay campos para modificar");
+        // Actualizar nombre
+        if (body.getNombre() != null) {
+            if (body.getNombre().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre no puede estar vacío");
+            }
+            pista.setNombre(body.getNombre());
         }
 
-        // actualizar precio
+        // Actualizar ubicación
+        if (body.getUbicacion() != null) {
+            pista.setUbicacion(body.getUbicacion());
+        }
+
+        // Actualizar precio
         if (body.getPrecioHora() != null) {
             if (body.getPrecioHora().compareTo(BigDecimal.ZERO) < 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "precioHora no puede ser negativo");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El precio no puede ser negativo");
             }
             pista.setPrecioHora(body.getPrecioHora());
         }
 
-        // actualizar activa
+        // Actualizar estado activa
         if (body.getActiva() != null) {
             pista.setActiva(body.getActiva());
         }
@@ -91,35 +104,17 @@ public class ControladorPistaPadel {
         return repositorioPista.save(pista);
     }
 
-    // 4) DELETE /pistaPadel/courts/{courtId} (ADMIN) -> desactivar pista
+    // DELETE /pistaPadel/courts/{courtId} (Solo ADMIN)
     @DeleteMapping("/{courtId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminarPista(
-            @PathVariable Long courtId,
-            HttpSession session) {
+    public void eliminarPista(@PathVariable Long courtId, HttpSession session) {
 
-        // 401: no autenticado
-        String email = (String) session.getAttribute(USUARIO_SESION);
-        if (email == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
+        validarAdmin(session); // Comprobación de seguridad
 
-        // buscar usuario (si no existe, 401)
-        ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
-        if (usuario == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        // 403: no admin
-        if (usuario.getRol() != ModeloRol.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        // 404: pista no encontrada
         ModeloPista pista = repositorioPista.findById(courtId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pista no encontrada"));
 
-        // "Eliminar" = desactivar
+        // En lugar de borrar, desactivamos la pista
         pista.setActiva(false);
         repositorioPista.save(pista);
     }

@@ -53,6 +53,12 @@ public class ControladorPistaPadel {
         return (List<ModeloPista>) repositorioPista.findAll();
     }
 
+    @GetMapping("/{courtId}")
+    public ModeloPista obtenerPistaPorId(@PathVariable Long courtId) {
+        return repositorioPista.findById(courtId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pista no encontrada"));
+    }
+
     // POST /pistaPadel/courts (Solo ADMIN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

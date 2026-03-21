@@ -39,6 +39,17 @@ public class ServicioReserva {
 
     @Transactional
     public ModeloReserva crearReserva(Long userId, ModeloReserva req) {
+        // Recuperamos al usuario para verificar su existencia y su ROL
+        ModeloUsuario usuario = repositorioUsuario.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+        // Si es ADMIN, no puede realizar reservas
+        if (usuario.getRol() == ModeloRol.ADMIN) {
+            logger.warn("Intento de reserva denegado: El usuario ID {} es ADMIN", userId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores no pueden realizar reservas");
+        }
+
+        // Validaciones de fecha y hora
         if (req.getFechaReserva().isBefore(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes reservar en una fecha pasada");
         }
@@ -47,22 +58,25 @@ public class ServicioReserva {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La hora de inicio ya ha pasado");
         }
 
-        logger.info("Solicitud de nueva reserva - Usuario ID: {}", userId);
-
-        ModeloUsuario usuario = repositorioUsuario.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-
+        // Buscamos la pista real en la base de datos para ver si está activa
         ModeloPista pista = repositorioPista.findById(req.getPista().getIdPista())
                 .orElseThrow(() -> {
                     logger.error("Error: Intento de reserva en pista inexistente ID: {}", req.getPista().getIdPista());
                     return new ResponseStatusException(HttpStatus.NOT_FOUND, "Pista no encontrada");
                 });
 
+        if (!pista.isActiva()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Esta pista no está activa");
+        }
+
+        logger.info("Solicitud de nueva reserva - Usuario ID: {} (Rol: USER)", userId);
+
+        // Validación de solapes
         logger.debug("Validando solapes para Pista: {}, Fecha: {}, Inicio: {}",
                 pista.getNombre(), req.getFechaReserva(), req.getHoraInicio());
 
         LocalTime horaFin = req.getHoraInicio().plusMinutes(req.getDuracionMinutos());
-        // En creación pasamos null como reservaId porque es nueva
+
         boolean solape = repositorioReserva.existeSolapeActivo(
                 pista.getIdPista(), req.getFechaReserva(), null, req.getHoraInicio(), horaFin);
 
@@ -71,14 +85,16 @@ public class ServicioReserva {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La pista ya está ocupada en ese horario");
         }
 
+        // Configuración final y guardado
         req.setUsuario(usuario);
         req.setPista(pista);
         req.setEstado(ModeloReserva.Estado.ACTIVA);
 
         ModeloReserva guardada = repositorioReserva.save(req);
-        logger.info("Reserva creada con éxito. ID Reserva: {}", guardada.getIdReserva());
+        logger.info("Reserva creada con éxito para usuario {}. ID Reserva: {}", usuario.getEmail(), guardada.getIdReserva());
         return guardada;
     }
+
 
     public List<ModeloReserva> listarMisReservas(Long userId, LocalDateTime from, LocalDateTime to) {
         logger.info("Consultando historial de reservas para Usuario ID: {}", userId);
@@ -119,31 +135,36 @@ public class ServicioReserva {
     public ModeloReserva actualizarReserva(Long userId, Long reservationId, PatchReservationRequest body) {
         logger.info("Intento de actualización de reserva ID: {} por usuario ID: {}", reservationId, userId);
 
-        // 1. Validar existencia y propiedad
+        //Validar existencia y propiedad
         ModeloReserva reserva = obtenerReservaYValidarPropiedad(userId, reservationId);
 
-        // 2. Aplicar cambios desde el DTO (usando los nombres de tu archivo PatchReservationRequest)
-        if (body.getDate() != null) {
-            reserva.setFechaReserva(body.getDate());
+        //Calcular los nuevos valores propuestos
+        LocalDate nuevaFecha = body.getDate() != null ? body.getDate() : reserva.getFechaReserva();
+        LocalTime nuevoInicio = body.getStartTime() != null ? body.getStartTime() : reserva.getHoraInicio();
+        Integer nuevaDuracion = body.getDurationMinutes() != null ? body.getDurationMinutes() : reserva.getDuracionMinutos();
+
+        ModeloPista nuevaPista = reserva.getPista();
+
+        // Validar que la nueva fecha/hora no sea en el pasado
+        if (nuevaFecha.isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes reprogramar a una fecha pasada");
         }
-        if (body.getStartTime() != null) {
-            reserva.setHoraInicio(body.getStartTime());
-        }
-        if (body.getDurationMinutes() != null) {
-            reserva.setDuracionMinutos(body.getDurationMinutes());
+        if (nuevaFecha.isEqual(LocalDate.now()) && nuevoInicio.isBefore(LocalTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nueva hora de inicio ya ha pasado");
         }
 
-        // 3. Validar solapes con el nuevo horario/pista
+        LocalTime nuevoFin = nuevoInicio.plusMinutes(nuevaDuracion);
+
+        // Validar solapes con el nuevo horario usando las variables temporales
         logger.debug("Validando disponibilidad para la actualización de la reserva {}", reservationId);
-        LocalTime horaFin = reserva.getHoraInicio().plusMinutes(reserva.getDuracionMinutos());
 
         // Pasamos reservationId para que el repositorio ignore esta misma reserva al buscar choques
         boolean haySolape = repositorioReserva.existeSolapeActivo(
                 reserva.getPista().getIdPista(),
-                reserva.getFechaReserva(),
+                nuevaFecha,
                 reservationId,
-                reserva.getHoraInicio(),
-                horaFin
+                nuevoInicio,
+                nuevoFin
         );
 
         if (haySolape) {
@@ -151,10 +172,17 @@ public class ServicioReserva {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El nuevo horario no está disponible");
         }
 
+        // 4. Si pasamos todas las validaciones, AHORA SÍ aplicamos los cambios a la entidad
+        reserva.setFechaReserva(nuevaFecha);
+        reserva.setHoraInicio(nuevoInicio);
+        reserva.setDuracionMinutos(nuevaDuracion);
+
+        // Al hacer save, saltará el @PreUpdate que ajustará la horaFin definitiva en BD
         ModeloReserva actualizada = repositorioReserva.save(reserva);
         logger.info("Reserva ID: {} actualizada con éxito", actualizada.getIdReserva());
         return actualizada;
     }
+
 
     private ModeloReserva obtenerReservaYValidarPropiedad(Long userId, Long reservationId) {
         logger.debug("Verificando permisos para User: {}, Reserva: {}", userId, reservationId);

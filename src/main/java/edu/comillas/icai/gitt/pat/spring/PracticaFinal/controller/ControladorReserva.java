@@ -1,6 +1,7 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal.controller;
 
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloReserva;
+import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloRol;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.ModeloUsuario;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.dto.PatchReservationRequest;
 import edu.comillas.icai.gitt.pat.spring.PracticaFinal.repository.RepositorioUsuario;

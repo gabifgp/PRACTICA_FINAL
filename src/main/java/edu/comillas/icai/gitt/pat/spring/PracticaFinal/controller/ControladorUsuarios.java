@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/pistaPadel/auth")
+@RequestMapping("/pistaPadel")
 public class ControladorUsuarios {
 
     private final RepositorioUsuario repositorioUsuario;
@@ -27,7 +27,7 @@ public class ControladorUsuarios {
         this.repositorioUsuario = repositorioUsuario;
     }
 
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ModeloUsuario register(@Valid @RequestBody ModeloUsuario usuario) {
         logger.info("Intentando registrar usuario con email: {}", usuario.getEmail());
@@ -47,7 +47,7 @@ public class ControladorUsuarios {
         return repositorioUsuario.save(usuario);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public String login(@Valid @RequestBody LoginRequest loginRequest, HttpSession session) {
         ModeloUsuario usuario = repositorioUsuario.findByEmail(loginRequest.getEmail());
 
@@ -60,7 +60,7 @@ public class ControladorUsuarios {
         return "Login exitoso";
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/auth/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(HttpSession session) {
         if (session.getAttribute(USUARIO_SESION) == null) {
@@ -70,33 +70,87 @@ public class ControladorUsuarios {
         logger.info("Sesión cerrada correctamente");
     }
 
-    @PatchMapping("/me")
-    public ModeloUsuario actualizarPerfil(HttpSession session, @RequestBody ModeloUsuario datosNuevos) {
+    @GetMapping("/auth/me")
+    public ModeloUsuario obtenerPerfil(HttpSession session) {
         String email = (String) session.getAttribute(USUARIO_SESION);
-        if (email == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay sesión activa");
+        }
 
         ModeloUsuario usuario = repositorioUsuario.findByEmail(email);
-
-        // Solo actualizamos si el campo viene en el JSON
-        if (datosNuevos.getNombre() != null) usuario.setNombre(datosNuevos.getNombre());
-        if (datosNuevos.getApellidos() != null) usuario.setApellidos(datosNuevos.getApellidos());
-        if (datosNuevos.getPassword() != null) usuario.setPassword(datosNuevos.getPassword());
-
-        return repositorioUsuario.save(usuario);
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado en la base de datos");
+        }
+        return usuario;
     }
 
-    // Añade esto al final de ControladorUsuarios.java
+    @PatchMapping("/users/{id}")
+    public ModeloUsuario actualizarPerfil(@PathVariable Long id, HttpSession session, @RequestBody ModeloUsuario datosNuevos) {
+        // 1. Obtener el email del usuario logueado desde la sesión
+        String emailSesion = (String) session.getAttribute(USUARIO_SESION);
+        if (emailSesion == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sesión no válida");
+        }
+
+        // 2. Buscar al usuario que hace la petición (quién es) y al que se quiere modificar (destino)
+        ModeloUsuario usuarioAutenticado = repositorioUsuario.findByEmail(emailSesion);
+        ModeloUsuario usuarioDestino = repositorioUsuario.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario a modificar no encontrado"));
+
+        // 3. SEGURIDAD: Solo puede editar si es ADMIN o si el ID de la URL es el SUYO (Dueño)
+        boolean esAdmin = usuarioAutenticado.getRol() == ModeloRol.ADMIN;
+        boolean esElDueno = usuarioAutenticado.getIdUsuario().equals(id);
+
+        if (!esAdmin && !esElDueno) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar este perfil");
+        }
+
+        // 4. Actualización de campos (solo si vienen en el JSON)
+        if (datosNuevos.getNombre() != null) usuarioDestino.setNombre(datosNuevos.getNombre());
+        if (datosNuevos.getApellidos() != null) usuarioDestino.setApellidos(datosNuevos.getApellidos());
+        if (datosNuevos.getTelefono() != null) usuarioDestino.setTelefono(datosNuevos.getTelefono());
+
+        // El password se actualiza si el modelo permite WRITE_ONLY
+        if (datosNuevos.getPassword() != null) usuarioDestino.setPassword(datosNuevos.getPassword());
+
+        // 5. IMPORTANTE: Solo un ADMIN debería poder cambiarse el ROL a sí mismo o a otros
+        if (datosNuevos.getRol() != null && esAdmin) {
+            usuarioDestino.setRol(datosNuevos.getRol());
+        }
+
+        return repositorioUsuario.save(usuarioDestino);
+    }
+
     @GetMapping("/users")
     public List<ModeloUsuario> listarTodosLosUsuarios(HttpSession session) {
-        validarAdmin(session); // Reutiliza la lógica de validarAdmin que tienes en otros controllers
+        validarAdmin(session); // Comprueba que es admin
         return repositorioUsuario.findAll();
     }
 
-    @DeleteMapping("/users/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminarUsuario(@PathVariable Long id, HttpSession session) {
-        validarAdmin(session);
-        repositorioUsuario.deleteById(id);
+    @GetMapping("/users/{id}")
+    public ModeloUsuario obtenerUsuarioPorId(@PathVariable Long id, HttpSession session) {
+        // 1. Verificar que hay una sesión activa
+        String emailSesion = (String) session.getAttribute(USUARIO_SESION);
+        if (emailSesion == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay sesión activa");
+        }
+
+        // 2. Buscar al usuario que hace la consulta y al usuario objetivo
+        ModeloUsuario usuarioLogueado = repositorioUsuario.findByEmail(emailSesion);
+        ModeloUsuario usuarioObjetivo = repositorioUsuario.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        // 3. Lógica de Seguridad: Admin o Dueño
+        boolean esAdmin = usuarioLogueado.getRol() == ModeloRol.ADMIN;
+        boolean esElDueno = usuarioLogueado.getIdUsuario().equals(id);
+
+        if (!esAdmin && !esElDueno) {
+            // Si no es admin ni es su propio ID, prohibimos el acceso
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para ver este perfil");
+        }
+
+        // 4. Devolver los datos (Jackson omitirá la password por el @JsonProperty WRITE_ONLY)
+        return usuarioObjetivo;
     }
 
     // Método útil para que otros controladores verifiquen el rol

@@ -1,5 +1,6 @@
 package edu.comillas.icai.gitt.pat.spring.PracticaFinal;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -49,7 +50,7 @@ public class ModeloUsuario {
     @NotBlank
     @Size(max = 255)
     @Column(name = "password", nullable = false, length = 255)
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Setter
